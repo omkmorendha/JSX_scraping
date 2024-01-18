@@ -8,6 +8,45 @@ from datetime import datetime
 import undetected_chromedriver as uc
 from selenium.webdriver.support import expected_conditions as EC
 
+code_to_city={
+    'EDC' : "Austin, TX",
+    "TSM" : "Taos, NM"
+}
+
+def parse_page(page, dep_code, arr_code, dep_date):
+    soup = BeautifulSoup(page, 'html.parser')
+    time_spans = soup.find_all('span', class_='flight-details-time--hour-minute')
+    ampm_spans = soup.find_all('span', class_='flight-details-time--am-pm')
+    planeType = soup.find('div', class_='flight-numbers__identifier').text.strip()
+    
+    try:
+        seats = int(soup.find('div', id='label-seats-left-plural').text.strip().split()[0])
+    except:
+        seats = 'INF'
+    
+    price = soup.find('div', class_='low-fare-ribbon-item-price ng-star-inserted').text.strip()
+    
+    results = {
+        'dep_time' : time_spans[0].text.strip() + ' ' + ampm_spans[0].text.strip(),
+        'dep_date' : dep_date,
+        'mobile' : "19974812447",
+        'userid' : 459,
+        'from_city' : code_to_city[dep_code],
+        'from_airport' : dep_code,
+        'to_city' : code_to_city[arr_code],
+        'to_airport' : arr_code,
+        'planetype' : planeType,
+        "availableseats": seats,
+        "Totalprice": price,
+        "is_flexible": 0,
+        "is_private": 0,
+        "flyxo_id": None,
+        "bookingUrl": None,
+        "flight_source": "jsx"
+    }
+    
+    return results
+
 def script(dep_code, arr_code, date_dep, date_arr):
     chrome_options = Options()
     chrome_options.add_argument("--window-size=1920,1080")
@@ -21,10 +60,6 @@ def script(dep_code, arr_code, date_dep, date_arr):
 
     url = 'https://www.jsx.com/home/search'
     driver.get(url)
-
-    driver.get_screenshot_as_file("screenshot.png")
-    with open('page_content.html', 'w', encoding='utf-8') as file:
-        file.write(driver.page_source)
 
     dep_box = driver.find_element(By.CSS_SELECTOR, ".station-select__icon.ng-tns-c287-5")
     dep_box.click()
@@ -80,6 +115,18 @@ def script(dep_code, arr_code, date_dep, date_arr):
     if(driver.current_url == 'https://www.jsx.com/home/search'):
         return "Invalid Dates"
     
-    driver.close()
+    full_page = driver.find_element(By.CSS_SELECTOR, ".fare-price-wrapper.desktop.ng-star-inserted")
+    full_page.click()
     
+    time.sleep(5)
+    
+    driver.get_screenshot_as_file("screenshot.png")
+    with open('page_content.html', 'w', encoding='utf-8') as file:
+        file.write(driver.page_source)
+    
+    out = parse_page(driver.page_source, arr_code, dep_code, date_dep)
+    driver.close()
+    return out
+
+# print(parse_page("page_content.html", "EDC", "TSM", "18-01-2024"))
 print(script("EDC", "TSM", "18-01-2024", "19-01-2024"))
