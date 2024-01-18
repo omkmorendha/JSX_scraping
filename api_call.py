@@ -7,6 +7,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 import time
 from datetime import datetime
+import undetected_chromedriver as uc
 
 def script(dep_code, arr_code, date_dep, date_arr):
     chrome_options = Options()
@@ -17,7 +18,7 @@ def script(dep_code, arr_code, date_dep, date_arr):
     user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.50 Safari/537.36'
     chrome_options.add_argument(f'user-agent={user_agent}')
     
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+    driver = uc.Chrome(options=chrome_options)
 
     url = 'https://jsx.com/home/search'
     driver.get(url)
@@ -59,11 +60,11 @@ def script(dep_code, arr_code, date_dep, date_arr):
     find_flights = driver.find_element(By.ID, "label-find-flights")
     find_flights.click()
     
+    time.sleep(5)
     with open('page_content.html', 'w', encoding='utf-8') as file:
         file.write(driver.page_source)
 
     driver.get_screenshot_as_file("screenshot.png")
-    time.sleep(30)
     driver.close()
     
 script("EDC", "TSM", "18-01-2024", "19-01-2024")

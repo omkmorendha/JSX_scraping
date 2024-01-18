@@ -7,6 +7,7 @@ name = "pypi"
 requests = "*"
 selenium = "*"
 webdriver-manager = "*"
+undetected-chromedriver = "*"
 
 [dev-packages]
 
