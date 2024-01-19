@@ -14,7 +14,6 @@ code_to_city={
     "OPF": "SOUTH FLORIDA",
     "DAL": "DALLAS",
     "MMU": "MORRISON TOWN",
-    "PBI": "SOUTH FLORIDA",
     "BZN": "BOZEMAN"
 }
 
@@ -81,7 +80,9 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
         dep_confirm = driver.find_element(By.CSS_SELECTOR, ".city-airport.ng-tns-c287-5")
         dep_confirm.click()
     except:
-        return "Invalid Departure Airport Code"
+        driver.close()
+        print("Invalid Departure Airport Code")
+        return []
 
     arr_box = driver.find_element(By.CSS_SELECTOR, ".station-select__icon.ng-tns-c287-6")
     arr_box.click()
@@ -93,12 +94,16 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
         arr_confirm = driver.find_element(By.CSS_SELECTOR, ".city-airport.ng-tns-c287-6")
         arr_confirm.click()
     except:
-        return "Invalid Arrival Airport Code"
+        driver.close()
+        print("Invalid Arrival Airport Code")
+        return []
 
     date_box = driver.find_element(By.CSS_SELECTOR, ".datepicker-departure-container.ng-tns-c294-7.ng-star-inserted.one-way")
     date_box.click()
 
     days_add = 0
+    tries = 7
+    
     while True:
         date_object = datetime.strptime(date_dep, '%d-%m-%Y')
         formatted_date = date_object.strftime('%A, %B %d, %Y')
@@ -113,12 +118,19 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
         
         time.sleep(5)    
         
+        tries -= 1
+        
         if(driver.current_url == 'https://www.jsx.com/home/search'):
             date_box = driver.find_element(By.CSS_SELECTOR, ".datepicker-departure-container.ng-tns-c294-7.ng-star-inserted.one-way")
             date_box.click()
             date_object += timedelta(days=1)
             days_add += 1
             date_dep = date_object.strftime('%d-%m-%Y')
+            
+            if tries <= 0:
+                print(f"No Flights available from {dep_code} to {arr_code}")
+                driver.close()
+                return []
         else:
             break
     
@@ -145,8 +157,7 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
         if top_date.text == dep_date_format:
             flights = driver.find_elements(By.XPATH, "//div[@class='fare-card ng-star-inserted']")
             for i in range(0, len(flights), 2):
-                flights = driver.find_elements(By.XPATH, "//div[@class='fare-card ng-star-inserted']")
-                
+
                 try:
                     avail = flights[i].find_element(By.ID, "label-seats-left-plural")
                     text_content = avail.text
@@ -159,16 +170,17 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
                         avail_seats = random.randint(10, 15)
                 
                 time.sleep(2)
-                flights[i].click()
-                time.sleep(2)
-                
-                out = parse_page(driver.page_source, arr_code, dep_code, date_dep, avail_seats)
-                if out is not None and out not in output:
-                    output.append(out)
-                
                 # driver.get_screenshot_as_file("screenshot.png")
                 # with open('page_content.html', 'w', encoding='utf-8') as file:
                 #     file.write(driver.page_source)
+                
+                flights = driver.find_elements(By.XPATH, "//div[@class='fare-card ng-star-inserted']")
+                flights[i].click()
+                time.sleep(2)
+                
+                out = parse_page(driver.page_source, dep_code, arr_code, date_dep, avail_seats)
+                if out is not None and out not in output:
+                    output.append(out)
                 
                 time.sleep(2)
                 edit_button = driver.find_element(By.ID, "label-selected-flight-edit")
@@ -185,15 +197,26 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
 
 if __name__ == "__main__":
     routes = [
-        ("HPN", "BCT"), 
+        ("HPN", "BCT"),
         ("HPN", "DAL"), 
         ("HPN", "OPF"), 
-        ("OPF", "DAL"),
-        ("OPF", "HPN"),
-        ("MMU", "BCT"),
+        ("OPF", "DAL"), 
+        ("OPF", "HPN"), 
+        ("MMU", "BCT"), 
         ("BCT", "MMU"),
-        ("BCT", "HPN"),
-        ("PBI", "BZN")
+        ("BCT", "HPN") 
     ]
     
-    print(script("HPN", "BCT"))
+    output = []
+    for i in range(len(routes)):
+        try:
+            out = script(routes[i][0], routes[i][1], MAX_days=3)
+        except:
+            try:
+                out = script(routes[i][0], routes[i][1], MAX_days=3)
+            except:
+                out = []
+        
+        output.extend(out)
+
+    print(script("OPF", "DAL"))
