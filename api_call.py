@@ -41,8 +41,8 @@ def parse_page(page, dep_code, arr_code, dep_date, avail):
         "Totalprice": price,
         "is_flexible": 0,
         "is_private": 0,
-        "flyxo_id": None,
-        "bookingUrl": None,
+        "flyxo_id": 0,
+        "bookingUrl": "https://www.jsx.com/home/search",
         "flight_source": "jsx"
     }
     
@@ -116,7 +116,7 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
         find_flights = driver.find_element(By.ID, "label-find-flights")
         find_flights.click()
         
-        time.sleep(5)    
+        time.sleep(3)    
         
         tries -= 1
         
@@ -156,8 +156,8 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
         
         if top_date.text == dep_date_format:
             flights = driver.find_elements(By.XPATH, "//div[@class='fare-card ng-star-inserted']")
+            
             for i in range(0, len(flights), 2):
-
                 try:
                     avail = flights[i].find_element(By.ID, "label-seats-left-plural")
                     text_content = avail.text
@@ -170,6 +170,7 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
                         avail_seats = random.randint(10, 15)
                 
                 time.sleep(2)
+                
                 # driver.get_screenshot_as_file("screenshot.png")
                 # with open('page_content.html', 'w', encoding='utf-8') as file:
                 #     file.write(driver.page_source)
@@ -210,13 +211,13 @@ if __name__ == "__main__":
     output = []
     for i in range(len(routes)):
         try:
-            out = script(routes[i][0], routes[i][1], MAX_days=3)
+            out = script(routes[i][0], routes[i][1], MAX_days=4)
         except:
             try:
-                out = script(routes[i][0], routes[i][1], MAX_days=3)
+                out = script(routes[i][0], routes[i][1], MAX_days=4)
             except:
                 out = []
         
         output.extend(out)
 
-    print(script("OPF", "DAL"))
+    print(output)
