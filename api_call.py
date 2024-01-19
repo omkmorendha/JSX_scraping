@@ -15,42 +15,42 @@ code_to_city={
 
 
 def parse_page(page, dep_code, arr_code, change_date = 0):
-    soup = BeautifulSoup(page, 'html.parser')
-    time_spans = soup.find_all('span', class_='flight-details-time--hour-minute')
-    ampm_spans = soup.find_all('span', class_='flight-details-time--am-pm')
-    planeType = soup.find('div', class_='flight-numbers__identifier').text.strip()
+    # soup = BeautifulSoup(page, 'html.parser')
+    # time_spans = soup.find_all('span', class_='flight-details-time--hour-minute')
+    # ampm_spans = soup.find_all('span', class_='flight-details-time--am-pm')
+    # planeType = soup.find('div', class_='flight-numbers__identifier').text.strip()
 
-    dep_date_element = soup.find('div', class_='flight-card__section selected-flight selected-not-connecting ng-star-inserted').h3
-    dep_date = dep_date_element.get_text().strip()
-    dep_date = datetime.strptime(dep_date, '%a, %B %d').replace(year=datetime.now().year + change_date).strftime('%d-%m-%Y')
+    # dep_date_element = soup.find('div', class_='flight-card__section selected-flight selected-not-connecting ng-star-inserted').h3
+    # dep_date = dep_date_element.get_text().strip()
+    # dep_date = datetime.strptime(dep_date, '%a, %B %d').replace(year=datetime.now().year + change_date).strftime('%d-%m-%Y')
     
-    try:
-        seats = int(soup.find('div', id='label-seats-left-plural').text.strip().split()[0])
-    except:
-        seats = 'INF'
+    # try:
+    #     seats = int(soup.find('div', id='label-seats-left-plural').text.strip().split()[0])
+    # except:
+    #     seats = 'INF'
     
-    price = soup.find('div', class_='low-fare-ribbon-item-price ng-star-inserted').text.strip()
+    # price = soup.find('div', class_='low-fare-ribbon-item-price ng-star-inserted').text.strip()
     
-    results = {
-        'dep_time' : time_spans[0].text.strip() + ' ' + ampm_spans[0].text.strip(),
-        'dep_date' : dep_date,
-        'mobile' : "19974812447",
-        'userid' : 459,
-        'from_city' : code_to_city[dep_code],
-        'from_airport' : dep_code,
-        'to_city' : code_to_city[arr_code],
-        'to_airport' : arr_code,
-        'planetype' : planeType,
-        "availableseats": seats,
-        "Totalprice": price,
-        "is_flexible": 0,
-        "is_private": 0,
-        "flyxo_id": None,
-        "bookingUrl": None,
-        "flight_source": "jsx"
-    }
+    # results = {
+    #     'dep_time' : time_spans[0].text.strip() + ' ' + ampm_spans[0].text.strip(),
+    #     'dep_date' : dep_date,
+    #     'mobile' : "19974812447",
+    #     'userid' : 459,
+    #     'from_city' : code_to_city[dep_code],
+    #     'from_airport' : dep_code,
+    #     'to_city' : code_to_city[arr_code],
+    #     'to_airport' : arr_code,
+    #     'planetype' : planeType,
+    #     "availableseats": seats,
+    #     "Totalprice": price,
+    #     "is_flexible": 0,
+    #     "is_private": 0,
+    #     "flyxo_id": None,
+    #     "bookingUrl": None,
+    #     "flight_source": "jsx"
+    # }
     
-    return results
+    return None
 
 
 def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y")):
@@ -113,7 +113,7 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y")):
         find_flights = driver.find_element(By.ID, "label-find-flights")
         find_flights.click()
         
-        time.sleep(2)    
+        time.sleep(10)    
         
         if(driver.current_url == 'https://www.jsx.com/home/search'):
             date_box = driver.find_element(By.CSS_SELECTOR, ".datepicker-departure-container.ng-tns-c294-7.ng-star-inserted.one-way")
@@ -126,11 +126,29 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y")):
     # full_page = driver.find_element(By.CSS_SELECTOR, ".fare-price-wrapper.desktop.ng-star-inserted")
     # full_page.click()
     
-    #time.sleep(50)
+    time.sleep(1)
+    driver.get_screenshot_as_file("screenshot.png")
+    with open('page_content.html', 'w', encoding='utf-8') as file:
+        file.write(driver.page_source)
     
-    out = parse_page(driver.page_source, arr_code, dep_code)
+    output = []
+
+    flights = driver.find_elements(By.XPATH, "//div[@class='fare-card ng-star-inserted']")
+    for i in range(0, len(flights), 2):
+        flights = driver.find_elements(By.XPATH, "//div[@class='fare-card ng-star-inserted']")
+        flights[i].click()
+        
+        out = parse_page(driver.page_source, arr_code, dep_code)
+        if out is not None:
+            output.append(out)
+        
+        time.sleep(2)
+        edit_button = driver.find_element(By.ID, "label-selected-flight-edit")
+        edit_button.click()
+        time.sleep(2)
+    
     driver.close()
-    return out
+    return output
 
 #print(parse_page("page_content.html", "EDC", "TSM", "18-01-2024"))
-print(script("CSL", "DAL"))#, "19-01-2024"))
+print(script("CSL", "DAL", "21-01-2024"))
