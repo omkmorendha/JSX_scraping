@@ -20,45 +20,37 @@ code_to_city={
 
 
 def parse_page(page, dep_code, arr_code, dep_date, avail):
-    # soup = BeautifulSoup(page, 'html.parser')
-    # time_spans = soup.find_all('span', class_='flight-details-time--hour-minute')
-    # ampm_spans = soup.find_all('span', class_='flight-details-time--am-pm')
-    # planeType = soup.find('div', class_='flight-numbers__identifier').text.strip()
+    soup = BeautifulSoup(page, 'html.parser')
+    time_spans = soup.find_all('span', class_='flight-details-time--hour-minute')
+    ampm_spans = soup.find_all('span', class_='flight-details-time--am-pm')
+    planeType = soup.find('span', class_='flight-numbers__identifier').text.strip()
 
-    # dep_date_element = soup.find('div', class_='flight-card__section selected-flight selected-not-connecting ng-star-inserted').h3
-    # dep_date = dep_date_element.get_text().strip()
-    # dep_date = datetime.strptime(dep_date, '%a, %B %d').replace(year=datetime.now().year + change_date).strftime('%d-%m-%Y')
+    price_text = soup.find('div', class_='total-cost ng-star-inserted').text.strip()
+    price = re.search(r'\$([\d,]+(\.\d{1,2})?)', price_text).group(1)
     
-    # try:
-    #     seats = int(soup.find('div', id='label-seats-left-plural').text.strip().split()[0])
-    # except:
-    #     seats = 'INF'
+    results = {
+        'dep_time' : time_spans[0].text.strip() + ' ' + ampm_spans[0].text.strip(),
+        'dep_date' : dep_date,
+        'mobile' : "19974812447",
+        'userid' : 459,
+        'from_city' : code_to_city[dep_code],
+        'from_airport' : dep_code,
+        'to_city' : code_to_city[arr_code],
+        'to_airport' : arr_code,
+        'planetype' : planeType,
+        "availableseats": avail,
+        "Totalprice": price,
+        "is_flexible": 0,
+        "is_private": 0,
+        "flyxo_id": None,
+        "bookingUrl": None,
+        "flight_source": "jsx"
+    }
     
-    # price = soup.find('div', class_='low-fare-ribbon-item-price ng-star-inserted').text.strip()
-    
-    # results = {
-    #     'dep_time' : time_spans[0].text.strip() + ' ' + ampm_spans[0].text.strip(),
-    #     'dep_date' : dep_date,
-    #     'mobile' : "19974812447",
-    #     'userid' : 459,
-    #     'from_city' : code_to_city[dep_code],
-    #     'from_airport' : dep_code,
-    #     'to_city' : code_to_city[arr_code],
-    #     'to_airport' : arr_code,
-    #     'planetype' : planeType,
-    #     "availableseats": seats,
-    #     "Totalprice": price,
-    #     "is_flexible": 0,
-    #     "is_private": 0,
-    #     "flyxo_id": None,
-    #     "bookingUrl": None,
-    #     "flight_source": "jsx"
-    # }
-    
-    return None
+    return results
 
 
-def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX_days = 10):
+def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX_days = 7):
     chrome_options = Options()
     chrome_options.add_argument("--window-size=1920,1080")
     
@@ -132,9 +124,6 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
     
     
     time.sleep(1)
-    driver.get_screenshot_as_file("screenshot.png")
-    with open('page_content.html', 'w', encoding='utf-8') as file:
-        file.write(driver.page_source)
     
     output = []
 
@@ -169,11 +158,17 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
                     except:
                         avail_seats = random.randint(10, 15)
                 
+                time.sleep(2)
                 flights[i].click()
+                time.sleep(2)
                 
                 out = parse_page(driver.page_source, arr_code, dep_code, date_dep, avail_seats)
                 if out is not None and out not in output:
                     output.append(out)
+                
+                # driver.get_screenshot_as_file("screenshot.png")
+                # with open('page_content.html', 'w', encoding='utf-8') as file:
+                #     file.write(driver.page_source)
                 
                 time.sleep(2)
                 edit_button = driver.find_element(By.ID, "label-selected-flight-edit")
@@ -187,5 +182,18 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
     driver.close()
     return output
 
-#print(parse_page("page_content.html", "EDC", "TSM", "18-01-2024"))
-print(script("CSL", "DAL"))
+
+if __name__ == "__main__":
+    routes = [
+        ("HPN", "BCT"), 
+        ("HPN", "DAL"), 
+        ("HPN", "OPF"), 
+        ("OPF", "DAL"),
+        ("OPF", "HPN"),
+        ("MMU", "BCT"),
+        ("BCT", "MMU"),
+        ("BCT", "HPN"),
+        ("PBI", "BZN")
+    ]
+    
+    print(script("HPN", "BCT"))
