@@ -8,6 +8,7 @@ requests = "*"
 selenium = "*"
 webdriver-manager = "*"
 undetected-chromedriver = "*"
+bs4 = "*"
 
 [dev-packages]
 
