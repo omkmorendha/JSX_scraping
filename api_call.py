@@ -1,23 +1,28 @@
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 import undetected_chromedriver as uc
-from selenium.webdriver.support import expected_conditions as EC
 
+max_attempts = 10
 code_to_city={
-    'EDC' : "Austin, TX",
-    "TSM" : "Taos, NM"
+    "EDC" : "Austin, TX",
+    "TSM" : "Taos, NM",
+    "BCT" : "Boca Raton, FL",
+    "MMU" : "Morristown, NJ",
 }
 
-def parse_page(page, dep_code, arr_code, dep_date):
+
+def parse_page(page, dep_code, arr_code, change_date = 0):
     soup = BeautifulSoup(page, 'html.parser')
     time_spans = soup.find_all('span', class_='flight-details-time--hour-minute')
     ampm_spans = soup.find_all('span', class_='flight-details-time--am-pm')
     planeType = soup.find('div', class_='flight-numbers__identifier').text.strip()
+
+    dep_date_element = soup.find('div', class_='flight-card__section selected-flight selected-not-connecting ng-star-inserted').h3
+    dep_date = dep_date_element.get_text().strip()
+    dep_date = datetime.strptime(dep_date, '%a, %B %d').replace(year=datetime.now().year + change_date).strftime('%d-%m-%Y')
     
     try:
         seats = int(soup.find('div', id='label-seats-left-plural').text.strip().split()[0])
@@ -47,7 +52,8 @@ def parse_page(page, dep_code, arr_code, dep_date):
     
     return results
 
-def script(dep_code, arr_code, date_dep, date_arr):
+
+def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y")):
     chrome_options = Options()
     chrome_options.add_argument("--window-size=1920,1080")
     
@@ -61,6 +67,13 @@ def script(dep_code, arr_code, date_dep, date_arr):
     url = 'https://www.jsx.com/home/search'
     driver.get(url)
 
+    trip_type = driver.find_element(By.XPATH, '//mat-icon[text()="flight_takeoff"]')
+    trip_type.click()
+    
+    time.sleep(1)
+    one_way_select = driver.find_element(By.ID, "mat-option-1")
+    one_way_select.click()
+    
     dep_box = driver.find_element(By.CSS_SELECTOR, ".station-select__icon.ng-tns-c287-5")
     dep_box.click()
 
@@ -85,48 +98,39 @@ def script(dep_code, arr_code, date_dep, date_arr):
     except:
         return "Invalid Arrival Airport Code"
 
-    date_box = driver.find_element(By.CSS_SELECTOR, ".datepicker-departure-container.ng-tns-c294-7.round-trip.ng-star-inserted")
+    date_box = driver.find_element(By.CSS_SELECTOR, ".datepicker-departure-container.ng-tns-c294-7.ng-star-inserted.one-way")
     date_box.click()
 
-    try:
+    while True:
         date_object = datetime.strptime(date_dep, '%d-%m-%Y')
         formatted_date = date_object.strftime('%A, %B %d, %Y')
-        date_1 = driver.find_element(By.CSS_SELECTOR, f"[aria-label=\"{formatted_date}\"]")
-        date_1.click()
-    except:
-        return "Invalid Departure Date"
+        date_element = driver.find_element(By.CSS_SELECTOR, f"[aria-label=\"{formatted_date}\"]")
+            
+        date_element.click()
+        date_confirm = driver.find_element(By.CSS_SELECTOR, "[aria-label=\"Close dates picker\"]")
+        date_confirm.click()
 
-    try:
-        date_object = datetime.strptime(date_arr, '%d-%m-%Y')
-        formatted_date = date_object.strftime('%A, %B %d, %Y')
-        date_2 = driver.find_element(By.CSS_SELECTOR, f"[aria-label=\"{formatted_date}\"]")
-        date_2.click()
-    except:
-        return "Invalid Arrival Date"
-
-    date_confirm = driver.find_element(By.CSS_SELECTOR, "[aria-label=\"Close dates picker\"]")
-    date_confirm.click()
+        find_flights = driver.find_element(By.ID, "label-find-flights")
+        find_flights.click()
+        
+        time.sleep(2)    
+        
+        if(driver.current_url == 'https://www.jsx.com/home/search'):
+            date_box = driver.find_element(By.CSS_SELECTOR, ".datepicker-departure-container.ng-tns-c294-7.ng-star-inserted.one-way")
+            date_box.click()
+            date_object += timedelta(days=1)
+            date_dep = date_object.strftime('%d-%m-%Y')
+        else:
+            break
     
-    find_flights = driver.find_element(By.ID, "label-find-flights")
-    find_flights.click()
-
-    time.sleep(5)
-   
-    if(driver.current_url == 'https://www.jsx.com/home/search'):
-        return "Invalid Dates"
+    # full_page = driver.find_element(By.CSS_SELECTOR, ".fare-price-wrapper.desktop.ng-star-inserted")
+    # full_page.click()
     
-    full_page = driver.find_element(By.CSS_SELECTOR, ".fare-price-wrapper.desktop.ng-star-inserted")
-    full_page.click()
+    #time.sleep(50)
     
-    time.sleep(5)
-    
-    driver.get_screenshot_as_file("screenshot.png")
-    with open('page_content.html', 'w', encoding='utf-8') as file:
-        file.write(driver.page_source)
-    
-    out = parse_page(driver.page_source, arr_code, dep_code, date_dep)
+    out = parse_page(driver.page_source, arr_code, dep_code)
     driver.close()
     return out
 
-# print(parse_page("page_content.html", "EDC", "TSM", "18-01-2024"))
-print(script("EDC", "TSM", "18-01-2024", "19-01-2024"))
+#print(parse_page("page_content.html", "EDC", "TSM", "18-01-2024"))
+print(script("CSL", "DAL"))#, "19-01-2024"))
