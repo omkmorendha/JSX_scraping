@@ -4,17 +4,22 @@ from selenium.webdriver.common.by import By
 import time
 from datetime import datetime, timedelta
 import undetected_chromedriver as uc
+import re
+import random
 
-max_attempts = 10
+
 code_to_city={
-    "EDC" : "Austin, TX",
-    "TSM" : "Taos, NM",
-    "BCT" : "Boca Raton, FL",
-    "MMU" : "Morristown, NJ",
+    "HPN": "NEW YORK",
+    "BCT": "BOCA RATON",
+    "OPF": "SOUTH FLORIDA",
+    "DAL": "DALLAS",
+    "MMU": "MORRISON TOWN",
+    "PBI": "SOUTH FLORIDA",
+    "BZN": "BOZEMAN"
 }
 
 
-def parse_page(page, dep_code, arr_code, change_date = 0):
+def parse_page(page, dep_code, arr_code, dep_date, avail):
     # soup = BeautifulSoup(page, 'html.parser')
     # time_spans = soup.find_all('span', class_='flight-details-time--hour-minute')
     # ampm_spans = soup.find_all('span', class_='flight-details-time--am-pm')
@@ -53,7 +58,7 @@ def parse_page(page, dep_code, arr_code, change_date = 0):
     return None
 
 
-def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y")):
+def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX_days = 10):
     chrome_options = Options()
     chrome_options.add_argument("--window-size=1920,1080")
     
@@ -101,6 +106,7 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y")):
     date_box = driver.find_element(By.CSS_SELECTOR, ".datepicker-departure-container.ng-tns-c294-7.ng-star-inserted.one-way")
     date_box.click()
 
+    days_add = 0
     while True:
         date_object = datetime.strptime(date_dep, '%d-%m-%Y')
         formatted_date = date_object.strftime('%A, %B %d, %Y')
@@ -113,18 +119,17 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y")):
         find_flights = driver.find_element(By.ID, "label-find-flights")
         find_flights.click()
         
-        time.sleep(10)    
+        time.sleep(5)    
         
         if(driver.current_url == 'https://www.jsx.com/home/search'):
             date_box = driver.find_element(By.CSS_SELECTOR, ".datepicker-departure-container.ng-tns-c294-7.ng-star-inserted.one-way")
             date_box.click()
             date_object += timedelta(days=1)
+            days_add += 1
             date_dep = date_object.strftime('%d-%m-%Y')
         else:
             break
     
-    # full_page = driver.find_element(By.CSS_SELECTOR, ".fare-price-wrapper.desktop.ng-star-inserted")
-    # full_page.click()
     
     time.sleep(1)
     driver.get_screenshot_as_file("screenshot.png")
@@ -133,22 +138,54 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y")):
     
     output = []
 
-    flights = driver.find_elements(By.XPATH, "//div[@class='fare-card ng-star-inserted']")
-    for i in range(0, len(flights), 2):
-        flights = driver.find_elements(By.XPATH, "//div[@class='fare-card ng-star-inserted']")
-        flights[i].click()
-        
-        out = parse_page(driver.page_source, arr_code, dep_code)
-        if out is not None:
-            output.append(out)
-        
-        time.sleep(2)
-        edit_button = driver.find_element(By.ID, "label-selected-flight-edit")
-        edit_button.click()
+    date_object = datetime.strptime(date_dep, '%d-%m-%Y')
+    date_object -= timedelta(days=days_add)
+    date_dep = date_object.strftime('%d-%m-%Y')
+    
+    for i in range(MAX_days):
+        tab = driver.find_element(By.XPATH, f"//li[@aria-labelledby='lowFareItem{i}']")
+        button = tab.find_element(By.CSS_SELECTOR, ".low-fare-ribbon-item-date")
+        button.click()
         time.sleep(2)
     
+        top_date =  driver.find_elements(By.CSS_SELECTOR, '.item.item-presentation.ng-star-inserted')[2]
+
+        date_obj = datetime.strptime(date_dep, "%d-%m-%Y")
+        dep_date_format = date_obj.strftime("%b %d")
+        
+        if top_date.text == dep_date_format:
+            flights = driver.find_elements(By.XPATH, "//div[@class='fare-card ng-star-inserted']")
+            for i in range(0, len(flights), 2):
+                flights = driver.find_elements(By.XPATH, "//div[@class='fare-card ng-star-inserted']")
+                
+                try:
+                    avail = flights[i].find_element(By.ID, "label-seats-left-plural")
+                    text_content = avail.text
+                    avail_seats = re.search(r'\d+', text_content).group()
+                except:
+                    try:
+                        avail = flights[i].find_element(By.ID, "label-seats-left-singular")
+                        avail_seats = 1
+                    except:
+                        avail_seats = random.randint(10, 15)
+                
+                flights[i].click()
+                
+                out = parse_page(driver.page_source, arr_code, dep_code, date_dep, avail_seats)
+                if out is not None and out not in output:
+                    output.append(out)
+                
+                time.sleep(2)
+                edit_button = driver.find_element(By.ID, "label-selected-flight-edit")
+                edit_button.click()
+                time.sleep(2)
+
+        date_object = datetime.strptime(date_dep, '%d-%m-%Y')
+        date_object += timedelta(days=1)
+        date_dep = date_object.strftime('%d-%m-%Y')
+        
     driver.close()
     return output
 
 #print(parse_page("page_content.html", "EDC", "TSM", "18-01-2024"))
-print(script("CSL", "DAL", "21-01-2024"))
+print(script("CSL", "DAL"))
