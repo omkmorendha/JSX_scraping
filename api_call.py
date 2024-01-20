@@ -23,21 +23,24 @@ def parse_page(page, dep_code, arr_code, dep_date, avail):
     soup = BeautifulSoup(page, 'html.parser')
     time_spans = soup.find_all('span', class_='flight-details-time--hour-minute')
     ampm_spans = soup.find_all('span', class_='flight-details-time--am-pm')
+    time_12_hour = time_spans[0].text.strip() + ' ' + ampm_spans[0].text.strip()
     planeType = soup.find('span', class_='flight-numbers__identifier').text.strip()
 
     price_text = soup.find('div', class_='total-cost ng-star-inserted').text.strip()
-    price = re.search(r'\$([\d,]+(\.\d{1,2})?)', price_text).group(1)
+    price = float(re.search(r'\$([\d,]+(\.\d{1,2})?)', price_text).group(1).replace(',', ''))
+    
+    dep_date_formatted = datetime.strptime(dep_date, "%d-%m-%Y").strftime("%Y-%m-%d")
     
     results = {
-        'dep_time' : time_spans[0].text.strip() + ' ' + ampm_spans[0].text.strip(),
-        'dep_date' : dep_date,
-        'mobile' : "19974812447",
-        'userid' : 521,
-        'from_city' : code_to_city[dep_code],
-        'from_airport' : dep_code,
-        'to_city' : code_to_city[arr_code],
-        'to_airport' : arr_code,
-        'planetype' : planeType,
+        'dep_time': datetime.strptime(time_12_hour, "%I:%M %p").strftime("%H:%M"),
+        'dep_date': dep_date_formatted,
+        'mobile': "19974812447",
+        'userid': 521,
+        'from_city': code_to_city[dep_code],
+        'from_airport': dep_code,
+        'to_city': code_to_city[arr_code],
+        'to_airport': arr_code,
+        'planetype': planeType,
         "availableseats": avail,
         "Totalprice": price,
         "is_flexible": 0,
@@ -82,7 +85,7 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
         dep_confirm.click()
     except:
         driver.close()
-        print("Invalid Departure Airport Code")
+        print(f"Invalid Departure Airport Code {dep_code} to {arr_code}")
         return []
 
     arr_box = driver.find_element(By.CSS_SELECTOR, ".station-select__icon.ng-tns-c287-6")
@@ -96,7 +99,7 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
         arr_confirm.click()
     except:
         driver.close()
-        print("Invalid Arrival Airport Code")
+        print(f"Invalid Arrival Airport Code {dep_code} to {arr_code}")
         return []
 
     date_box = driver.find_element(By.CSS_SELECTOR, ".datepicker-departure-container.ng-tns-c294-7.ng-star-inserted.one-way")
@@ -218,6 +221,7 @@ if __name__ == "__main__":
         
         output.extend(out)
     
+    # output = script("BCT", "MMU")
     api_endpoint = 'http://35.183.144.210:8100/api/web/JSXFlights'
     post_data = {}
     
@@ -226,6 +230,7 @@ if __name__ == "__main__":
     else:
         post_data["flights"] = output
     
+    print(post_data)
     response = requests.post(api_endpoint, json=post_data)
     
     if response.status_code == 200:
