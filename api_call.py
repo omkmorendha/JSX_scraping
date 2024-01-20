@@ -11,10 +11,10 @@ import requests
 
 code_to_city={
     "HPN": "NEW YORK",
-    "BCT": "BOCA RATON",
+    "BCT": "SOUTH FLORIDA",
     "OPF": "SOUTH FLORIDA",
     "DAL": "DALLAS",
-    "MMU": "MORRISON TOWN",
+    "MMU": "NEW YORK",
     "BZN": "BOZEMAN"
 }
 
