@@ -32,7 +32,7 @@ def parse_page(page, dep_code, arr_code, dep_date, avail):
         'dep_time' : time_spans[0].text.strip() + ' ' + ampm_spans[0].text.strip(),
         'dep_date' : dep_date,
         'mobile' : "19974812447",
-        'userid' : 522,
+        'userid' : 521,
         'from_city' : code_to_city[dep_code],
         'from_airport' : dep_code,
         'to_city' : code_to_city[arr_code],
@@ -103,7 +103,7 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
     date_box.click()
 
     days_add = 0
-    tries = 7
+    tries = MAX_days
     
     while True:
         date_object = datetime.strptime(date_dep, '%d-%m-%Y')
@@ -140,13 +140,14 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
     
     output = []
 
-    date_object = datetime.strptime(date_dep, '%d-%m-%Y')
-    date_object -= timedelta(days=days_add)
-    date_dep = date_object.strftime('%d-%m-%Y')
-    
-    for i in range(MAX_days):
+    for i in range(MAX_days - tries - 1, MAX_days):
         tab = driver.find_element(By.XPATH, f"//li[@aria-labelledby='lowFareItem{i}']")
         button = tab.find_element(By.CSS_SELECTOR, ".low-fare-ribbon-item-date")
+        
+        # driver.get_screenshot_as_file("screenshot.png")
+        # with open('page_content.html', 'w', encoding='utf-8') as file:
+        #     file.write(driver.page_source)
+        
         button.click()
         time.sleep(2)
     
@@ -171,10 +172,6 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
                         avail_seats = random.randint(10, 15)
                 
                 time.sleep(2)
-                
-                # driver.get_screenshot_as_file("screenshot.png")
-                # with open('page_content.html', 'w', encoding='utf-8') as file:
-                #     file.write(driver.page_source)
                 
                 flights = driver.find_elements(By.XPATH, "//div[@class='fare-card ng-star-inserted']")
                 flights[i].click()
@@ -221,8 +218,8 @@ if __name__ == "__main__":
         
         output.extend(out)
     
-    api_endpoint = '35.183.144.210/api/web/JSXFlights'
-    post_data = {"flights" : ["1", "2", "3"]}
+    api_endpoint = 'http://35.183.144.210:8100/api/web/JSXFlights'
+    post_data = {}
     
     if(output == []):
         post_data["flights"] = "Error in retrieving data"
