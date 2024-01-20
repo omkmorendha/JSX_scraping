@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 import undetected_chromedriver as uc
 import re
 import random
+import requests
 
 
 code_to_city={
@@ -31,7 +32,7 @@ def parse_page(page, dep_code, arr_code, dep_date, avail):
         'dep_time' : time_spans[0].text.strip() + ' ' + ampm_spans[0].text.strip(),
         'dep_date' : dep_date,
         'mobile' : "19974812447",
-        'userid' : 459,
+        'userid' : 522,
         'from_city' : code_to_city[dep_code],
         'from_airport' : dep_code,
         'to_city' : code_to_city[arr_code],
@@ -211,13 +212,27 @@ if __name__ == "__main__":
     output = []
     for i in range(len(routes)):
         try:
-            out = script(routes[i][0], routes[i][1], MAX_days=4)
+            out = script(routes[i][0], routes[i][1], MAX_days=7)
         except:
             try:
-                out = script(routes[i][0], routes[i][1], MAX_days=4)
+                out = script(routes[i][0], routes[i][1], MAX_days=7)
             except:
                 out = []
         
         output.extend(out)
-
-    print(output)
+    
+    api_endpoint = '35.183.144.210/api/web/JSXFlights'
+    post_data = {"flights" : ["1", "2", "3"]}
+    
+    if(output == []):
+        post_data["flights"] = "Error in retrieving data"
+    else:
+        post_data["flights"] = output
+    
+    response = requests.post(api_endpoint, json=post_data)
+    
+    if response.status_code == 200:
+        print("Data successfully posted to the API.")
+    else:
+        print(f"Failed to post data to the API. Status code: {response.status_code}")
+        print(response.text)
