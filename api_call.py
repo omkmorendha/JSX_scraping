@@ -214,19 +214,19 @@ if __name__ == "__main__":
         ("BCT", "HPN") 
     ]
     
-    # output = []
-    # for i in range(len(routes)):
-    #     try:
-    #         out = script(routes[i][0], routes[i][1], MAX_days=7)
-    #     except:
-    #         try:
-    #             out = script(routes[i][0], routes[i][1], MAX_days=7)
-    #         except:
-    #             out = []
+    output = []
+    for i in range(len(routes)):
+        try:
+            out = script(routes[i][0], routes[i][1], MAX_days=7)
+        except:
+            try:
+                out = script(routes[i][0], routes[i][1], MAX_days=7)
+            except:
+                out = []
         
-    #     output.extend(out)
+        output.extend(out)
     
-    output = script("BCT", "MMU")
+    #output = script("BCT", "MMU")
     api_endpoint = 'http://35.183.144.210:8100/api/web/JSXFlights'
     post_data = {}
     
