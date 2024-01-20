@@ -7,6 +7,11 @@ import undetected_chromedriver as uc
 import re
 import random
 import requests
+import logging
+
+
+log_file_path = 'Logfile.log'  # Replace with your desired log file path
+logging.basicConfig(filename=log_file_path, level=logging.INFO, format='%(asctime)s - %(levelname)s: %(message)s')
 
 
 code_to_city={
@@ -209,19 +214,19 @@ if __name__ == "__main__":
         ("BCT", "HPN") 
     ]
     
-    output = []
-    for i in range(len(routes)):
-        try:
-            out = script(routes[i][0], routes[i][1], MAX_days=7)
-        except:
-            try:
-                out = script(routes[i][0], routes[i][1], MAX_days=7)
-            except:
-                out = []
+    # output = []
+    # for i in range(len(routes)):
+    #     try:
+    #         out = script(routes[i][0], routes[i][1], MAX_days=7)
+    #     except:
+    #         try:
+    #             out = script(routes[i][0], routes[i][1], MAX_days=7)
+    #         except:
+    #             out = []
         
-        output.extend(out)
+    #     output.extend(out)
     
-    # output = script("BCT", "MMU")
+    output = script("BCT", "MMU")
     api_endpoint = 'http://35.183.144.210:8100/api/web/JSXFlights'
     post_data = {}
     
@@ -234,7 +239,7 @@ if __name__ == "__main__":
     response = requests.post(api_endpoint, json=post_data)
     
     if response.status_code == 200:
-        print("Data successfully posted to the API.")
+        logging.info("Data successfully posted to the API.")
     else:
-        print(f"Failed to post data to the API. Status code: {response.status_code}")
-        print(response.text)
+        logging.error(f"Failed to post data to the API. Status code: {response.status_code}")
+        logging.error(response.text)
