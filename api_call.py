@@ -1,4 +1,3 @@
-from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
 import time
@@ -59,7 +58,7 @@ def parse_page(page, dep_code, arr_code, dep_date, avail):
 
 
 def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX_days = 7):
-    chrome_options = Options()
+    chrome_options = uc.ChromeOptions()
     chrome_options.add_argument("--window-size=1920,1080")
     
     #HEADLESS OPTIONS
@@ -239,7 +238,7 @@ if __name__ == "__main__":
     response = requests.post(api_endpoint, json=post_data)
     
     if response.status_code == 200:
-        logging.info("Data successfully posted to the API.")
+        logging.info(f"Data successfully posted to the API. Response: {response.text}")
     else:
         logging.error(f"Failed to post data to the API. Status code: {response.status_code}")
         logging.error(response.text)
