@@ -9,6 +9,7 @@ selenium = "*"
 webdriver-manager = "*"
 undetected-chromedriver = "*"
 bs4 = "*"
+slack-sdk = "*"
 
 [dev-packages]
 

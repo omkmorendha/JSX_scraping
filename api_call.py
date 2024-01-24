@@ -7,8 +7,12 @@ import re
 import random
 import requests
 import logging
+from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
+from dotenv import load_dotenv
+import os
 
-
+load_dotenv()
 log_file_path = 'Logfile.log'  # Replace with your desired log file path
 logging.basicConfig(filename=log_file_path, level=logging.INFO, format='%(asctime)s - %(levelname)s: %(message)s')
 
@@ -220,7 +224,9 @@ if __name__ == "__main__":
         except:
             try:
                 out = script(routes[i][0], routes[i][1], MAX_days=7)
-            except:
+            except Exception as e:
+                logging.error(f"An unexpected error occurred: {e}")
+                error_message = e
                 out = []
         
         output.extend(out)
@@ -231,6 +237,21 @@ if __name__ == "__main__":
     
     if(output == []):
         post_data["flights"] = "Error in retrieving data"
+        slack_token = os.environ.get("SLACK_API_TOKEN")
+        channel_id = os.environ.get("CHANNEL_ID")
+    
+        try:
+            client = WebClient(token=slack_token)
+            message = f"Error occurred in the script:\n\n{error_message}"
+            response = client.chat_postMessage(
+                channel=channel_id,
+                text=message
+            )
+            if not response["ok"]:
+                print(f"Failed to send message to Slack. Error: {response['error']}")
+        except SlackApiError as e:
+            print(f"Slack API error: {e.response['error']}")
+
     else:
         post_data["flights"] = output
     
