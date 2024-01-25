@@ -236,7 +236,7 @@ if __name__ == "__main__":
         output.extend(out)
     
     #output = script("BCT", "MMU")
-    api_endpoint = 'http://35.183.144.210:8100/api/web/JSXFlights'
+    api_endpoint = os.environ.get('API_ENDPOINT')
     post_data = {}
     
     if(output == []):
