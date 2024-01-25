@@ -267,3 +267,17 @@ if __name__ == "__main__":
     else:
         logging.error(f"Failed to post data to the API. Status code: {response.status_code}")
         logging.error(response.text)
+        slack_token = os.environ.get("SLACK_API_TOKEN")
+        channel_id = os.environ.get("CHANNEL_ID")
+    
+        try:
+            client = WebClient(token=slack_token)
+            message = f"Failed to post data to the API. Status code: {response.status_code}"
+            response = client.chat_postMessage(
+                channel=channel_id,
+                text=message
+            )
+            if not response["ok"]:
+                print(f"Failed to send message to Slack. Error: {response['error']}")
+        except SlackApiError as e:
+            print(f"Slack API error: {e.response['error']}")
