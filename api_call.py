@@ -43,7 +43,7 @@ def parse_page(page, dep_code, arr_code, dep_date, avail):
         'dep_time': datetime.strptime(time_12_hour, "%I:%M %p").strftime("%H:%M"),
         'dep_date': dep_date_formatted,
         'mobile': "19974812447",
-        'userid': 521,
+        'userid': 659,
         'from_city': code_to_city[dep_code],
         'from_airport': dep_code,
         'to_city': code_to_city[arr_code],
@@ -71,80 +71,84 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
     #chrome_options.add_argument(f'user-agent={user_agent}')
     
     driver = uc.Chrome(options=chrome_options)
-
-    url = 'https://www.jsx.com/home/search'
-    driver.get(url)
-
-    trip_type = driver.find_element(By.XPATH, '//mat-icon[text()="flight_takeoff"]')
-    trip_type.click()
-    
-    time.sleep(1)
-    one_way_select = driver.find_element(By.ID, "mat-option-1")
-    one_way_select.click()
-    
-    dep_box = driver.find_element(By.CSS_SELECTOR, ".station-select__icon.ng-tns-c287-5")
-    dep_box.click()
-
-    dep_in = driver.find_element(By.CSS_SELECTOR, ".gbunmask.ng-tns-c287-5.ng-untouched.ng-pristine.ng-valid")
-    dep_in.send_keys(dep_code)
     
     try:
-        dep_confirm = driver.find_element(By.CSS_SELECTOR, ".city-airport.ng-tns-c287-5")
-        dep_confirm.click()
+        url = 'https://www.jsx.com/home/search'
+        driver.get(url)
+
+        trip_type = driver.find_element(By.XPATH, '//mat-icon[text()="flight_takeoff"]')
+        trip_type.click()
+        
+        time.sleep(1)
+        one_way_select = driver.find_element(By.ID, "mat-option-1")
+        one_way_select.click()
+        
+        dep_box = driver.find_element(By.CSS_SELECTOR, ".station-select__icon.ng-tns-c287-5")
+        dep_box.click()
+
+        dep_in = driver.find_element(By.CSS_SELECTOR, ".gbunmask.ng-tns-c287-5.ng-untouched.ng-pristine.ng-valid")
+        dep_in.send_keys(dep_code)
+        
+        try:
+            dep_confirm = driver.find_element(By.CSS_SELECTOR, ".city-airport.ng-tns-c287-5")
+            dep_confirm.click()
+        except:
+            driver.close()
+            print(f"Invalid Departure Airport Code {dep_code} to {arr_code}")
+            return []
+
+        arr_box = driver.find_element(By.CSS_SELECTOR, ".station-select__icon.ng-tns-c287-6")
+        arr_box.click()
+        
+        arr_in = driver.find_element(By.CSS_SELECTOR, ".gbunmask.ng-tns-c287-6.ng-untouched.ng-pristine.ng-valid")
+        arr_in.send_keys(arr_code)
+        
+        try:
+            arr_confirm = driver.find_element(By.CSS_SELECTOR, ".city-airport.ng-tns-c287-6")
+            arr_confirm.click()
+        except:
+            driver.close()
+            print(f"Invalid Arrival Airport Code {dep_code} to {arr_code}")
+            return []
+
+        date_box = driver.find_element(By.CSS_SELECTOR, ".datepicker-departure-container.ng-tns-c294-7.ng-star-inserted.one-way")
+        date_box.click()
+
+        days_add = 0
+        tries = MAX_days
+        
+        while True:
+            date_object = datetime.strptime(date_dep, '%d-%m-%Y')
+            formatted_date = date_object.strftime('%A, %B %d, %Y')
+            date_element = driver.find_element(By.CSS_SELECTOR, f"[aria-label=\"{formatted_date}\"]")
+                
+            date_element.click()
+            date_confirm = driver.find_element(By.CSS_SELECTOR, "[aria-label=\"Close dates picker\"]")
+            date_confirm.click()
+
+            find_flights = driver.find_element(By.ID, "label-find-flights")
+            find_flights.click()
+            
+            time.sleep(3)    
+            
+            tries -= 1
+            
+            if(driver.current_url == 'https://www.jsx.com/home/search'):
+                date_box = driver.find_element(By.CSS_SELECTOR, ".datepicker-departure-container.ng-tns-c294-7.ng-star-inserted.one-way")
+                date_box.click()
+                date_object += timedelta(days=1)
+                days_add += 1
+                date_dep = date_object.strftime('%d-%m-%Y')
+                
+                if tries <= 0:
+                    print(f"No Flights available from {dep_code} to {arr_code}")
+                    driver.close()
+                    return []
+            else:
+                break
     except:
         driver.close()
-        print(f"Invalid Departure Airport Code {dep_code} to {arr_code}")
         return []
-
-    arr_box = driver.find_element(By.CSS_SELECTOR, ".station-select__icon.ng-tns-c287-6")
-    arr_box.click()
-    
-    arr_in = driver.find_element(By.CSS_SELECTOR, ".gbunmask.ng-tns-c287-6.ng-untouched.ng-pristine.ng-valid")
-    arr_in.send_keys(arr_code)
-    
-    try:
-        arr_confirm = driver.find_element(By.CSS_SELECTOR, ".city-airport.ng-tns-c287-6")
-        arr_confirm.click()
-    except:
-        driver.close()
-        print(f"Invalid Arrival Airport Code {dep_code} to {arr_code}")
-        return []
-
-    date_box = driver.find_element(By.CSS_SELECTOR, ".datepicker-departure-container.ng-tns-c294-7.ng-star-inserted.one-way")
-    date_box.click()
-
-    days_add = 0
-    tries = MAX_days
-    
-    while True:
-        date_object = datetime.strptime(date_dep, '%d-%m-%Y')
-        formatted_date = date_object.strftime('%A, %B %d, %Y')
-        date_element = driver.find_element(By.CSS_SELECTOR, f"[aria-label=\"{formatted_date}\"]")
-            
-        date_element.click()
-        date_confirm = driver.find_element(By.CSS_SELECTOR, "[aria-label=\"Close dates picker\"]")
-        date_confirm.click()
-
-        find_flights = driver.find_element(By.ID, "label-find-flights")
-        find_flights.click()
-        
-        time.sleep(3)    
-        
-        tries -= 1
-        
-        if(driver.current_url == 'https://www.jsx.com/home/search'):
-            date_box = driver.find_element(By.CSS_SELECTOR, ".datepicker-departure-container.ng-tns-c294-7.ng-star-inserted.one-way")
-            date_box.click()
-            date_object += timedelta(days=1)
-            days_add += 1
-            date_dep = date_object.strftime('%d-%m-%Y')
-            
-            if tries <= 0:
-                print(f"No Flights available from {dep_code} to {arr_code}")
-                driver.close()
-                return []
-        else:
-            break
     
     
     time.sleep(1)
