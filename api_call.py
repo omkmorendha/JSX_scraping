@@ -146,67 +146,67 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
                     return []
             else:
                 break
+    
+        time.sleep(1)
+        
+        output = []
+
+        for i in range(MAX_days - tries - 1, MAX_days):
+            tab = driver.find_element(By.XPATH, f"//li[@aria-labelledby='lowFareItem{i}']")
+            button = tab.find_element(By.CSS_SELECTOR, ".low-fare-ribbon-item-date")
+            
+            # driver.get_screenshot_as_file("screenshot.png")
+            # with open('page_content.html', 'w', encoding='utf-8') as file:
+            #     file.write(driver.page_source)
+            
+            button.click()
+            time.sleep(2)
+        
+            top_date =  driver.find_elements(By.CSS_SELECTOR, '.item.item-presentation.ng-star-inserted')[2]
+
+            date_obj = datetime.strptime(date_dep, "%d-%m-%Y")
+            dep_date_format = date_obj.strftime("%b %d")
+            
+            if top_date.text == dep_date_format:
+                flights = driver.find_elements(By.XPATH, "//div[@class='fare-card ng-star-inserted']")
+                
+                for i in range(0, len(flights), 2):
+                    try:
+                        avail = flights[i].find_element(By.ID, "label-seats-left-plural")
+                        text_content = avail.text
+                        avail_seats = re.search(r'\d+', text_content).group()
+                    except:
+                        try:
+                            avail = flights[i].find_element(By.ID, "label-seats-left-singular")
+                            avail_seats = 1
+                        except:
+                            avail_seats = random.randint(10, 15)
+                    
+                    time.sleep(2)
+                    
+                    flights = driver.find_elements(By.XPATH, "//div[@class='fare-card ng-star-inserted']")
+                    flights[i].click()
+                    time.sleep(2)
+                    
+                    out = parse_page(driver.page_source, dep_code, arr_code, date_dep, avail_seats)
+                    if out is not None and out not in output:
+                        output.append(out)
+                    
+                    time.sleep(2)
+                    edit_button = driver.find_element(By.ID, "label-selected-flight-edit")
+                    edit_button.click()
+                    time.sleep(2)
+
+            date_object = datetime.strptime(date_dep, '%d-%m-%Y')
+            date_object += timedelta(days=1)
+            date_dep = date_object.strftime('%d-%m-%Y')
+            
+        driver.close()
+        return output
+
     except:
         driver.close()
         return []
-    
-    
-    time.sleep(1)
-    
-    output = []
-
-    for i in range(MAX_days - tries - 1, MAX_days):
-        tab = driver.find_element(By.XPATH, f"//li[@aria-labelledby='lowFareItem{i}']")
-        button = tab.find_element(By.CSS_SELECTOR, ".low-fare-ribbon-item-date")
-        
-        # driver.get_screenshot_as_file("screenshot.png")
-        # with open('page_content.html', 'w', encoding='utf-8') as file:
-        #     file.write(driver.page_source)
-        
-        button.click()
-        time.sleep(2)
-    
-        top_date =  driver.find_elements(By.CSS_SELECTOR, '.item.item-presentation.ng-star-inserted')[2]
-
-        date_obj = datetime.strptime(date_dep, "%d-%m-%Y")
-        dep_date_format = date_obj.strftime("%b %d")
-        
-        if top_date.text == dep_date_format:
-            flights = driver.find_elements(By.XPATH, "//div[@class='fare-card ng-star-inserted']")
-            
-            for i in range(0, len(flights), 2):
-                try:
-                    avail = flights[i].find_element(By.ID, "label-seats-left-plural")
-                    text_content = avail.text
-                    avail_seats = re.search(r'\d+', text_content).group()
-                except:
-                    try:
-                        avail = flights[i].find_element(By.ID, "label-seats-left-singular")
-                        avail_seats = 1
-                    except:
-                        avail_seats = random.randint(10, 15)
-                
-                time.sleep(2)
-                
-                flights = driver.find_elements(By.XPATH, "//div[@class='fare-card ng-star-inserted']")
-                flights[i].click()
-                time.sleep(2)
-                
-                out = parse_page(driver.page_source, dep_code, arr_code, date_dep, avail_seats)
-                if out is not None and out not in output:
-                    output.append(out)
-                
-                time.sleep(2)
-                edit_button = driver.find_element(By.ID, "label-selected-flight-edit")
-                edit_button.click()
-                time.sleep(2)
-
-        date_object = datetime.strptime(date_dep, '%d-%m-%Y')
-        date_object += timedelta(days=1)
-        date_dep = date_object.strftime('%d-%m-%Y')
-        
-    driver.close()
-    return output
 
 
 if __name__ == "__main__":
@@ -246,6 +246,10 @@ if __name__ == "__main__":
     
         try:
             client = WebClient(token=slack_token)
+            
+            if not error_message:
+                error_message = "500 Error on JSW"
+            
             message = f"Error occurred in the script:\n\n{error_message}"
             response = client.chat_postMessage(
                 channel=channel_id,
