@@ -66,8 +66,8 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
     chrome_options.add_argument("--window-size=1920,1080")
     
     #HEADLESS OPTIONS
-    #chrome_options.add_argument('--headless')
-    #user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.50 Safari/537.36'
+    #chrome_options.add_argument('--headless=new')
+    #user_agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.50 Safari/537.36"
     #chrome_options.add_argument(f'user-agent={user_agent}')
     
     driver = uc.Chrome(options=chrome_options)
@@ -119,19 +119,18 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
         
         while True:
             date_object = datetime.strptime(date_dep, '%d-%m-%Y')
-            formatted_date = date_object.strftime('%A, %B %-d, %Y')
-                  
+            formatted_date = date_object.strftime('%A, %B %-d, %Y')             
+
+            date_element = driver.find_element(By.CSS_SELECTOR, f"[aria-label=\"{formatted_date}\"]")
+            date_element.click()
+            
             # time.sleep(3)
             # driver.get_screenshot_as_file("screenshot.png")
             # with open('page_content.html', 'w', encoding='utf-8') as file:
             #     file.write(driver.page_source)
-
-            # time.sleep(3)                
-            # print(formatted_date)
-            date_element = driver.find_element(By.CSS_SELECTOR, f"[aria-label=\"{formatted_date}\"]")
+            # time.sleep(3)  
+            
             date_confirm = driver.find_element(By.CSS_SELECTOR, "[aria-label=\"Close dates picker\"]")
-                            
-            date_element.click()
             date_confirm.click()
 
             find_flights = driver.find_element(By.ID, "label-find-flights")
@@ -208,7 +207,8 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
         driver.quit()
         return output
 
-    except:
+    except Exception as e:
+        print("error: ", e)
         driver.quit()
         return []
 
