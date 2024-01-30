@@ -66,7 +66,7 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
     chrome_options.add_argument("--window-size=1920,1080")
     
     #HEADLESS OPTIONS
-    chrome_options.add_argument('--headless')
+    #chrome_options.add_argument('--headless')
     #user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.50 Safari/537.36'
     #chrome_options.add_argument(f'user-agent={user_agent}')
     
@@ -119,7 +119,15 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
         
         while True:
             date_object = datetime.strptime(date_dep, '%d-%m-%Y')
-            formatted_date = date_object.strftime('%A, %B %d, %Y')
+            formatted_date = date_object.strftime('%A, %B %-d, %Y')
+                  
+            # time.sleep(3)
+            # driver.get_screenshot_as_file("screenshot.png")
+            # with open('page_content.html', 'w', encoding='utf-8') as file:
+            #     file.write(driver.page_source)
+
+            # time.sleep(3)                
+            # print(formatted_date)
             date_element = driver.find_element(By.CSS_SELECTOR, f"[aria-label=\"{formatted_date}\"]")
             date_confirm = driver.find_element(By.CSS_SELECTOR, "[aria-label=\"Close dates picker\"]")
                             
@@ -154,10 +162,6 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
         for i in range(MAX_days - tries - 1, MAX_days):
             tab = driver.find_element(By.XPATH, f"//li[@aria-labelledby='lowFareItem{i}']")
             button = tab.find_element(By.CSS_SELECTOR, ".low-fare-ribbon-item-date")
-            
-            # driver.get_screenshot_as_file("screenshot.png")
-            # with open('page_content.html', 'w', encoding='utf-8') as file:
-            #     file.write(driver.page_source)
             
             button.click()
             time.sleep(2)
@@ -226,13 +230,14 @@ if __name__ == "__main__":
     for i in range(len(routes)):
         try:
             out = script(routes[i][0], routes[i][1], MAX_days=7)
-        except:
-            try:
+
+            if (out == []):
                 out = script(routes[i][0], routes[i][1], MAX_days=7)
-            except Exception as e:
-                logging.error(f"An unexpected error occurred: {e}")
-                error_message = e
-                out = []
+                
+        except Exception as e:
+            logging.error(f"An unexpected error occurred: {e}")
+            error_message = e
+            out = []
         
         output.extend(out)
     
@@ -264,25 +269,25 @@ if __name__ == "__main__":
     else:
         post_data["flights"] = output
     
-    logging.info(f"Data posted: {post_data}")
-    response = requests.post(api_endpoint, json=post_data)
-    
-    if response.status_code == 200:
-        logging.info(f"Data successfully posted to the API. Response: {response.text}")
-    else:
-        logging.error(f"Failed to post data to the API. Status code: {response.status_code}")
-        logging.error(response.text)
-        slack_token = os.environ.get("SLACK_API_TOKEN")
-        channel_id = os.environ.get("CHANNEL_ID")
-    
-        try:
-            client = WebClient(token=slack_token)
-            message = f"Failed to post data to the API. Status code: {response.status_code}"
-            response = client.chat_postMessage(
-                channel=channel_id,
-                text=message
-            )
-            if not response["ok"]:
-                print(f"Failed to send message to Slack. Error: {response['error']}")
-        except SlackApiError as e:
-            print(f"Slack API error: {e.response['error']}")
+        logging.info(f"Data posted: {post_data}")
+        response = requests.post(api_endpoint, json=post_data)
+        
+        if response.status_code == 200:
+            logging.info(f"Data successfully posted to the API. Response: {response.text}")
+        else:
+            logging.error(f"Failed to post data to the API. Status code: {response.status_code}")
+            logging.error(response.text)
+            slack_token = os.environ.get("SLACK_API_TOKEN")
+            channel_id = os.environ.get("CHANNEL_ID")
+        
+            try:
+                client = WebClient(token=slack_token)
+                message = f"Failed to post data to the API. Status code: {response.status_code}"
+                response = client.chat_postMessage(
+                    channel=channel_id,
+                    text=message
+                )
+                if not response["ok"]:
+                    print(f"Failed to send message to Slack. Error: {response['error']}")
+            except SlackApiError as e:
+                print(f"Slack API error: {e.response['error']}")
