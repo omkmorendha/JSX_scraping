@@ -66,7 +66,7 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
     chrome_options.add_argument("--window-size=1920,1080")
     
     #HEADLESS OPTIONS
-    #chrome_options.add_argument('--headless')
+    chrome_options.add_argument('--headless')
     #user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.50 Safari/537.36'
     #chrome_options.add_argument(f'user-agent={user_agent}')
     
@@ -93,7 +93,7 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
             dep_confirm = driver.find_element(By.CSS_SELECTOR, ".city-airport.ng-tns-c287-5")
             dep_confirm.click()
         except:
-            driver.close()
+            driver.quit()
             print(f"Invalid Departure Airport Code {dep_code} to {arr_code}")
             return []
 
@@ -107,7 +107,7 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
             arr_confirm = driver.find_element(By.CSS_SELECTOR, ".city-airport.ng-tns-c287-6")
             arr_confirm.click()
         except:
-            driver.close()
+            driver.quit()
             print(f"Invalid Arrival Airport Code {dep_code} to {arr_code}")
             return []
 
@@ -121,9 +121,9 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
             date_object = datetime.strptime(date_dep, '%d-%m-%Y')
             formatted_date = date_object.strftime('%A, %B %d, %Y')
             date_element = driver.find_element(By.CSS_SELECTOR, f"[aria-label=\"{formatted_date}\"]")
-                
-            date_element.click()
             date_confirm = driver.find_element(By.CSS_SELECTOR, "[aria-label=\"Close dates picker\"]")
+                            
+            date_element.click()
             date_confirm.click()
 
             find_flights = driver.find_element(By.ID, "label-find-flights")
@@ -142,7 +142,7 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
                 
                 if tries <= 0:
                     print(f"No Flights available from {dep_code} to {arr_code}")
-                    driver.close()
+                    driver.quit()
                     return []
             else:
                 break
@@ -180,7 +180,7 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
                             avail = flights[i].find_element(By.ID, "label-seats-left-singular")
                             avail_seats = 1
                         except:
-                            avail_seats = random.randint(10, 15)
+                            avail_seats = random.randint(5, 15)
                     
                     time.sleep(2)
                     
@@ -201,11 +201,11 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
             date_object += timedelta(days=1)
             date_dep = date_object.strftime('%d-%m-%Y')
             
-        driver.close()
+        driver.quit()
         return output
 
     except:
-        driver.close()
+        driver.quit()
         return []
 
 
@@ -221,6 +221,7 @@ if __name__ == "__main__":
         ("BCT", "HPN") 
     ]
     
+    error_message = None
     output = []
     for i in range(len(routes)):
         try:
@@ -248,8 +249,8 @@ if __name__ == "__main__":
             client = WebClient(token=slack_token)
             
             if not error_message:
-                error_message = "500 Error on JSW"
-            
+                error_message = "500 error on JSW"
+                
             message = f"Error occurred in the script:\n\n{error_message}"
             response = client.chat_postMessage(
                 channel=channel_id,
@@ -259,11 +260,11 @@ if __name__ == "__main__":
                 print(f"Failed to send message to Slack. Error: {response['error']}")
         except SlackApiError as e:
             print(f"Slack API error: {e.response['error']}")
-
+      
     else:
         post_data["flights"] = output
     
-    print(post_data)
+    logging.info(f"Data posted: {post_data}")
     response = requests.post(api_endpoint, json=post_data)
     
     if response.status_code == 200:
