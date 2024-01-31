@@ -78,7 +78,6 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
             print(f"From {dep_code} to {arr_code}")
             url = 'https://www.jsx.com/home/search'
             driver.get(url)
-            driver.get_screenshot_as_file("screenshot.png")
             
             trip_type = driver.find_element(By.XPATH, '//mat-icon[text()="flight_takeoff"]')
             trip_type.click()
@@ -113,6 +112,7 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
                 driver.quit()
                 print(f"Invalid Arrival Airport Code {dep_code} to {arr_code}")
                 return []
+            
             date_box = driver.find_element(By.CSS_SELECTOR, ".datepicker-departure-container.ng-tns-c294-7.ng-star-inserted.one-way")
             date_box.click()
             days_add = 0
@@ -120,9 +120,17 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
             
             while True:
                 date_object = datetime.strptime(date_dep, '%d-%m-%Y')
-                formatted_date = date_object.strftime('%A, %B %-d, %Y')             
-                date_element = driver.find_element(By.CSS_SELECTOR, f"[aria-label=\"{formatted_date}\"]")
-                date_element.click()
+                formatted_date = date_object.strftime('%A, %B %-d, %Y')
+                try:     
+                    date_element = driver.find_element(By.CSS_SELECTOR, f"[aria-label=\"{formatted_date}\"]")
+                    date_element.click()
+                    
+                    date_confirm = driver.find_element(By.CSS_SELECTOR, "[aria-label=\"Close dates picker\"]")
+                    date_confirm.click()
+                    find_flights = driver.find_element(By.ID, "label-find-flights")
+                    find_flights.click()
+                except:
+                    pass
                 
                 # time.sleep(3)
                 # driver.get_screenshot_as_file("screenshot.png")
@@ -130,18 +138,14 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
                 #     file.write(driver.page_source)
                 # time.sleep(3)  
                 
-                date_confirm = driver.find_element(By.CSS_SELECTOR, "[aria-label=\"Close dates picker\"]")
-                date_confirm.click()
-                find_flights = driver.find_element(By.ID, "label-find-flights")
-                find_flights.click()
-                
                 time.sleep(3)    
                 
                 tries -= 1
                 
                 if(driver.current_url == 'https://www.jsx.com/home/search'):
                     date_box = driver.find_element(By.CSS_SELECTOR, ".datepicker-departure-container.ng-tns-c294-7.ng-star-inserted.one-way")
-                    date_box.click()
+                    #date_box.click()
+                    driver.execute_script("arguments[0].click();", date_box)
                     date_object += timedelta(days=1)
                     days_add += 1
                     date_dep = date_object.strftime('%d-%m-%Y')
@@ -237,7 +241,7 @@ if __name__ == "__main__":
         
         output.extend(out)
     
-    #output = script("BCT", "MMU")
+    # output = script("MMU", "BCT")
     api_endpoint = os.environ.get('API_ENDPOINT')
     post_data = {}
     
@@ -265,7 +269,7 @@ if __name__ == "__main__":
     else:
         post_data["flights"] = output
     
-        logging.info(f"Data posted: {post_data}")
+        #logging.info(f"Data posted: {post_data}")
         response = requests.post(api_endpoint, json=post_data)
         
         if response.status_code == 200:
