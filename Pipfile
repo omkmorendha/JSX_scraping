@@ -10,6 +10,7 @@ webdriver-manager = "*"
 undetected-chromedriver = "*"
 bs4 = "*"
 slack-sdk = "*"
+pyvirtualdisplay = "*"
 
 [dev-packages]
 
