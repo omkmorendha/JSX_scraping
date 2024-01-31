@@ -63,158 +63,148 @@ def parse_page(page, dep_code, arr_code, dep_date, avail):
 
 
 def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX_days = 7):
-    with Display(): 
-        chrome_options = uc.ChromeOptions()
-        chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options = uc.ChromeOptions()
+    chrome_options.add_argument("--window-size=1920,1080")
         
-        #HEADLESS OPTIONS
-        #chrome_options.add_argument('--headless=new')
-        #user_agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
-        #chrome_options.add_argument(f'user-agent={user_agent}')
+    #HEADLESS OPTIONS
+    #chrome_options.add_argument('--headless=new')
+    #user_agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
+    #chrome_options.add_argument(f'user-agent={user_agent}')
 
-        driver = uc.Chrome(options=chrome_options, use_subprocess=False)
+    driver = uc.Chrome(options=chrome_options, use_subprocess=False)
+    
+    try:
+        url = 'https://www.jsx.com/home/search'
+        driver.get(url)
+        driver.get_screenshot_as_file("screenshot.png")
+        
+        trip_type = driver.find_element(By.XPATH, '//mat-icon[text()="flight_takeoff"]')
+        trip_type.click()
+        
+        time.sleep(1)
+        one_way_select = driver.find_element(By.ID, "mat-option-1")
+        one_way_select.click()
+        
+        dep_box = driver.find_element(By.CSS_SELECTOR, ".station-select__icon.ng-tns-c287-5")
+        dep_box.click()
+        dep_in = driver.find_element(By.CSS_SELECTOR, ".gbunmask.ng-tns-c287-5.ng-untouched.ng-pristine.ng-valid")
+        dep_in.send_keys(dep_code)
         
         try:
-            url = 'https://www.jsx.com/home/search'
-            driver.get(url)
-
-            driver.get_screenshot_as_file("screenshot.png")
-            
-            trip_type = driver.find_element(By.XPATH, '//mat-icon[text()="flight_takeoff"]')
-            trip_type.click()
-            
-            time.sleep(1)
-            one_way_select = driver.find_element(By.ID, "mat-option-1")
-            one_way_select.click()
-            
-            dep_box = driver.find_element(By.CSS_SELECTOR, ".station-select__icon.ng-tns-c287-5")
-            dep_box.click()
-
-            dep_in = driver.find_element(By.CSS_SELECTOR, ".gbunmask.ng-tns-c287-5.ng-untouched.ng-pristine.ng-valid")
-            dep_in.send_keys(dep_code)
-            
-            try:
-                dep_confirm = driver.find_element(By.CSS_SELECTOR, ".city-airport.ng-tns-c287-5")
-                dep_confirm.click()
-            except:
-                driver.quit()
-                print(f"Invalid Departure Airport Code {dep_code} to {arr_code}")
-                return []
-
-            arr_box = driver.find_element(By.CSS_SELECTOR, ".station-select__icon.ng-tns-c287-6")
-            arr_box.click()
-            
-            arr_in = driver.find_element(By.CSS_SELECTOR, ".gbunmask.ng-tns-c287-6.ng-untouched.ng-pristine.ng-valid")
-            arr_in.send_keys(arr_code)
-            
-            try:
-                arr_confirm = driver.find_element(By.CSS_SELECTOR, ".city-airport.ng-tns-c287-6")
-                arr_confirm.click()
-            except:
-                driver.quit()
-                print(f"Invalid Arrival Airport Code {dep_code} to {arr_code}")
-                return []
-
-            date_box = driver.find_element(By.CSS_SELECTOR, ".datepicker-departure-container.ng-tns-c294-7.ng-star-inserted.one-way")
-            date_box.click()
-
-            days_add = 0
-            tries = MAX_days
-            
-            while True:
-                date_object = datetime.strptime(date_dep, '%d-%m-%Y')
-                formatted_date = date_object.strftime('%A, %B %-d, %Y')             
-
-                date_element = driver.find_element(By.CSS_SELECTOR, f"[aria-label=\"{formatted_date}\"]")
-                date_element.click()
-                
-                # time.sleep(3)
-                # driver.get_screenshot_as_file("screenshot.png")
-                # with open('page_content.html', 'w', encoding='utf-8') as file:
-                #     file.write(driver.page_source)
-                # time.sleep(3)  
-                
-                date_confirm = driver.find_element(By.CSS_SELECTOR, "[aria-label=\"Close dates picker\"]")
-                date_confirm.click()
-
-                find_flights = driver.find_element(By.ID, "label-find-flights")
-                find_flights.click()
-                
-                time.sleep(3)    
-                
-                tries -= 1
-                
-                if(driver.current_url == 'https://www.jsx.com/home/search'):
-                    date_box = driver.find_element(By.CSS_SELECTOR, ".datepicker-departure-container.ng-tns-c294-7.ng-star-inserted.one-way")
-                    date_box.click()
-                    date_object += timedelta(days=1)
-                    days_add += 1
-                    date_dep = date_object.strftime('%d-%m-%Y')
-                    
-                    if tries <= 0:
-                        print(f"No Flights available from {dep_code} to {arr_code}")
-                        driver.quit()
-                        return []
-                else:
-                    break
+            dep_confirm = driver.find_element(By.CSS_SELECTOR, ".city-airport.ng-tns-c287-5")
+            dep_confirm.click()
+        except:
+            driver.quit()
+            print(f"Invalid Departure Airport Code {dep_code} to {arr_code}")
+            return []
         
-            time.sleep(1)
+        arr_box = driver.find_element(By.CSS_SELECTOR, ".station-select__icon.ng-tns-c287-6")
+        arr_box.click()
+        
+        arr_in = driver.find_element(By.CSS_SELECTOR, ".gbunmask.ng-tns-c287-6.ng-untouched.ng-pristine.ng-valid")
+        arr_in.send_keys(arr_code)
+        
+        try:
+            arr_confirm = driver.find_element(By.CSS_SELECTOR, ".city-airport.ng-tns-c287-6")
+            arr_confirm.click()
+        except:
+            driver.quit()
+            print(f"Invalid Arrival Airport Code {dep_code} to {arr_code}")
+            return []
+        date_box = driver.find_element(By.CSS_SELECTOR, ".datepicker-departure-container.ng-tns-c294-7.ng-star-inserted.one-way")
+        date_box.click()
+        days_add = 0
+        tries = MAX_days
+        
+        while True:
+            date_object = datetime.strptime(date_dep, '%d-%m-%Y')
+            formatted_date = date_object.strftime('%A, %B %-d, %Y')             
+            date_element = driver.find_element(By.CSS_SELECTOR, f"[aria-label=\"{formatted_date}\"]")
+            date_element.click()
             
-            output = []
-
-            for i in range(MAX_days - tries - 1, MAX_days):
-                tab = driver.find_element(By.XPATH, f"//li[@aria-labelledby='lowFareItem{i}']")
-                button = tab.find_element(By.CSS_SELECTOR, ".low-fare-ribbon-item-date")
-                
-                button.click()
-                time.sleep(2)
+            # time.sleep(3)
+            # driver.get_screenshot_as_file("screenshot.png")
+            # with open('page_content.html', 'w', encoding='utf-8') as file:
+            #     file.write(driver.page_source)
+            # time.sleep(3)  
             
-                top_date =  driver.find_elements(By.CSS_SELECTOR, '.item.item-presentation.ng-star-inserted')[2]
-
-                date_obj = datetime.strptime(date_dep, "%d-%m-%Y")
-                dep_date_format = date_obj.strftime("%b %d")
-                
-                if top_date.text == dep_date_format:
-                    flights = driver.find_elements(By.XPATH, "//div[@class='fare-card ng-star-inserted']")
-                    
-                    for i in range(0, len(flights), 2):
-                        try:
-                            avail = flights[i].find_element(By.ID, "label-seats-left-plural")
-                            text_content = avail.text
-                            avail_seats = re.search(r'\d+', text_content).group()
-                        except:
-                            try:
-                                avail = flights[i].find_element(By.ID, "label-seats-left-singular")
-                                avail_seats = 1
-                            except:
-                                avail_seats = random.randint(5, 15)
-                        
-                        time.sleep(2)
-                        
-                        flights = driver.find_elements(By.XPATH, "//div[@class='fare-card ng-star-inserted']")
-                        flights[i].click()
-                        time.sleep(2)
-                        
-                        out = parse_page(driver.page_source, dep_code, arr_code, date_dep, avail_seats)
-                        if out is not None and out not in output:
-                            output.append(out)
-                        
-                        time.sleep(2)
-                        edit_button = driver.find_element(By.ID, "label-selected-flight-edit")
-                        edit_button.click()
-                        time.sleep(2)
-
-                date_object = datetime.strptime(date_dep, '%d-%m-%Y')
+            date_confirm = driver.find_element(By.CSS_SELECTOR, "[aria-label=\"Close dates picker\"]")
+            date_confirm.click()
+            find_flights = driver.find_element(By.ID, "label-find-flights")
+            find_flights.click()
+            
+            time.sleep(3)    
+            
+            tries -= 1
+            
+            if(driver.current_url == 'https://www.jsx.com/home/search'):
+                date_box = driver.find_element(By.CSS_SELECTOR, ".datepicker-departure-container.ng-tns-c294-7.ng-star-inserted.one-way")
+                date_box.click()
                 date_object += timedelta(days=1)
+                days_add += 1
                 date_dep = date_object.strftime('%d-%m-%Y')
                 
-            driver.quit()
-            return output
-
-        except Exception as e:
-            print("error: ", e)
-            driver.quit()
-            return []
+                if tries <= 0:
+                    print(f"No Flights available from {dep_code} to {arr_code}")
+                    driver.quit()
+                    return []
+            else:
+                break
+    
+        time.sleep(1)
+        
+        output = []
+        for i in range(MAX_days - tries - 1, MAX_days):
+            tab = driver.find_element(By.XPATH, f"//li[@aria-labelledby='lowFareItem{i}']")
+            button = tab.find_element(By.CSS_SELECTOR, ".low-fare-ribbon-item-date")
+            
+            button.click()
+            time.sleep(2)
+        
+            top_date =  driver.find_elements(By.CSS_SELECTOR, '.item.item-presentation.ng-star-inserted')[2]
+            date_obj = datetime.strptime(date_dep, "%d-%m-%Y")
+            dep_date_format = date_obj.strftime("%b %d")
+            
+            if top_date.text == dep_date_format:
+                flights = driver.find_elements(By.XPATH, "//div[@class='fare-card ng-star-inserted']")
+                
+                for i in range(0, len(flights), 2):
+                    try:
+                        avail = flights[i].find_element(By.ID, "label-seats-left-plural")
+                        text_content = avail.text
+                        avail_seats = re.search(r'\d+', text_content).group()
+                    except:
+                        try:
+                            avail = flights[i].find_element(By.ID, "label-seats-left-singular")
+                            avail_seats = 1
+                        except:
+                            avail_seats = random.randint(5, 15)
+                    
+                    time.sleep(2)
+                    
+                    flights = driver.find_elements(By.XPATH, "//div[@class='fare-card ng-star-inserted']")
+                    flights[i].click()
+                    time.sleep(2)
+                    
+                    out = parse_page(driver.page_source, dep_code, arr_code, date_dep, avail_seats)
+                    if out is not None and out not in output:
+                        output.append(out)
+                    
+                    time.sleep(2)
+                    edit_button = driver.find_element(By.ID, "label-selected-flight-edit")
+                    edit_button.click()
+                    time.sleep(2)
+            date_object = datetime.strptime(date_dep, '%d-%m-%Y')
+            date_object += timedelta(days=1)
+            date_dep = date_object.strftime('%d-%m-%Y')
+            
+        driver.quit()
+        return output
+    
+    except Exception as e:
+        print("error: ", e)
+        driver.quit()
+        return []
 
 
 if __name__ == "__main__":
@@ -235,8 +225,8 @@ if __name__ == "__main__":
         try:
             out = script(routes[i][0], routes[i][1], MAX_days=7)
 
-            if (out == []):
-                out = script(routes[i][0], routes[i][1], MAX_days=7)
+            # if (out == []):
+            #     out = script(routes[i][0], routes[i][1], MAX_days=7)
                 
         except Exception as e:
             logging.error(f"An unexpected error occurred: {e}")
