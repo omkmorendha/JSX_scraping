@@ -62,7 +62,7 @@ def parse_page(page, dep_code, arr_code, dep_date, avail):
     return results
 
 
-def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX_days = 7):
+def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX_days = 30):
     with Display():
         chrome_options = uc.ChromeOptions()
         chrome_options.add_argument("--window-size=1920,1080")
@@ -85,35 +85,36 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
             time.sleep(1)
             one_way_select = driver.find_element(By.ID, "mat-option-1")
             one_way_select.click()
-            
-            dep_box = driver.find_element(By.CSS_SELECTOR, ".station-select__icon.ng-tns-c287-5")
+
+            dep_box = driver.find_element(By.CSS_SELECTOR, ".station-select__icon")
             dep_box.click()
-            dep_in = driver.find_element(By.CSS_SELECTOR, ".gbunmask.ng-tns-c287-5.ng-untouched.ng-pristine.ng-valid")
+
+            dep_in = driver.find_element(By.CSS_SELECTOR, ".gbunmask.ng-tns-c283-5.ng-untouched.ng-pristine.ng-valid")
             dep_in.send_keys(dep_code)
             
             try:
-                dep_confirm = driver.find_element(By.CSS_SELECTOR, ".city-airport.ng-tns-c287-5")
+                dep_confirm = driver.find_element(By.CSS_SELECTOR, ".city-airport.ng-tns-c283-5")
                 dep_confirm.click()
             except:
                 driver.quit()
                 print(f"Invalid Departure Airport Code {dep_code} to {arr_code}")
                 return []
             
-            arr_box = driver.find_element(By.CSS_SELECTOR, ".station-select__icon.ng-tns-c287-6")
+            arr_box = driver.find_element(By.CSS_SELECTOR, ".station-select__icon.ng-tns-c283-6")
             arr_box.click()
             
-            arr_in = driver.find_element(By.CSS_SELECTOR, ".gbunmask.ng-tns-c287-6.ng-untouched.ng-pristine.ng-valid")
+            arr_in = driver.find_element(By.CSS_SELECTOR, ".gbunmask.ng-tns-c283-6.ng-untouched.ng-pristine.ng-valid")
             arr_in.send_keys(arr_code)
             
             try:
-                arr_confirm = driver.find_element(By.CSS_SELECTOR, ".city-airport.ng-tns-c287-6")
+                arr_confirm = driver.find_element(By.CSS_SELECTOR, ".city-airport.ng-tns-c283-6")
                 arr_confirm.click()
             except:
                 driver.quit()
                 print(f"Invalid Arrival Airport Code {dep_code} to {arr_code}")
                 return []
-            
-            date_box = driver.find_element(By.CSS_SELECTOR, ".datepicker-departure-container.ng-tns-c294-7.ng-star-inserted.one-way")
+                        
+            date_box = driver.find_element(By.CSS_SELECTOR, ".datepicker-departure-container.ng-tns-c290-7.ng-star-inserted.one-way")
             date_box.click()
             days_add = 0
             tries = MAX_days
@@ -143,7 +144,7 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
                 tries -= 1
                 
                 if(driver.current_url == 'https://www.jsx.com/home/search'):
-                    date_box = driver.find_element(By.CSS_SELECTOR, ".datepicker-departure-container.ng-tns-c294-7.ng-star-inserted.one-way")
+                    date_box = driver.find_element(By.CSS_SELECTOR, ".input-container.ng-tns-c290-7")
                     #date_box.click()
                     driver.execute_script("arguments[0].click();", date_box)
                     date_object += timedelta(days=1)
@@ -215,8 +216,7 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
 
 if __name__ == "__main__":
     routes = [
-        ("HPN", "BCT"),
-        ("HPN", "DAL"), 
+        ("HPN", "BCT"), 
         ("HPN", "OPF"), 
         ("OPF", "DAL"), 
         ("OPF", "HPN"), 
@@ -229,12 +229,13 @@ if __name__ == "__main__":
     output = []
     for i in range(len(routes)):
         try:
-            out = script(routes[i][0], routes[i][1], MAX_days=7)
+            out = script(routes[i][0], routes[i][1], MAX_days=30)
 
             # if (out == []):
             #     out = script(routes[i][0], routes[i][1], MAX_days=7)
                 
         except Exception as e:
+            print(e)
             logging.error(f"An unexpected error occurred: {e}")
             error_message = e
             out = []
