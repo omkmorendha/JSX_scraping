@@ -162,11 +162,30 @@ def script(dep_code, arr_code, date_dep=datetime.now().strftime("%d-%m-%Y"), MAX
             
             output = []
             for i in range(MAX_days - tries - 1, MAX_days):
-                tab = driver.find_element(By.XPATH, f"//li[@aria-labelledby='lowFareItem{i}']")
-                button = tab.find_element(By.CSS_SELECTOR, ".low-fare-ribbon-item-date")
-                
-                button.click()
-                time.sleep(2)
+                try:
+                    tab = driver.find_element(By.XPATH, f"//li[@aria-labelledby='lowFareItem{i}']")
+                    button = tab.find_element(By.CSS_SELECTOR, ".low-fare-ribbon-item-date")
+                    
+                    button.click()
+                    time.sleep(2)
+                except:
+                    for _ in range(4):
+                        try:
+                            next_button = driver.find_element(By.CSS_SELECTOR, ".low-fare-ribbon-control.next")
+                            next_button.click()
+                            time.sleep(1)  # Adjust the sleep time as needed
+                        except Exception as e:
+                            print(f"Error clicking next button: {e}")
+
+                    time.sleep(5)
+                    try:
+                        tab = driver.find_element(By.XPATH, f"//li[@aria-labelledby='lowFareItem{i}']")
+                        button = tab.find_element(By.CSS_SELECTOR, ".low-fare-ribbon-item-date")
+                        
+                        button.click()
+                        time.sleep(2)
+                    except:
+                        pass
             
                 top_date =  driver.find_elements(By.CSS_SELECTOR, '.item.item-presentation.ng-star-inserted')[2]
                 date_obj = datetime.strptime(date_dep, "%d-%m-%Y")
